@@ -1,49 +1,48 @@
-from flask import Flask, request
+from flask import Flask, render_template, request
 import sqlite3
 
 app = Flask(__name__)
 
 @app.route("/", methods=["GET", "POST"])
 def home():
-    result = ""
+
+    result = None
+
+    conn = sqlite3.connect("threats.db")
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT COUNT(*) FROM threats")
+    total_threats = cursor.fetchone()[0]
+
+    cursor.execute("SELECT COUNT(*) FROM threats WHERE type='IP'")
+    total_ips = cursor.fetchone()[0]
+
+    cursor.execute("SELECT COUNT(*) FROM threats WHERE type='Domain'")
+    total_domains = cursor.fetchone()[0]
+
+    cursor.execute("SELECT COUNT(*) FROM threats WHERE type='Hash'")
+    total_hashes = cursor.fetchone()[0]
 
     if request.method == "POST":
         indicator = request.form["indicator"]
-
-        conn = sqlite3.connect("threats.db")
-        cursor = conn.cursor()
 
         cursor.execute(
             "SELECT * FROM threats WHERE indicator=?",
             (indicator,)
         )
 
-        threat = cursor.fetchone()
+        result = cursor.fetchone()
 
-        conn.close()
+    conn.close()
 
-        if threat:
-            result = f"""
-            Indicator: {threat[1]}<br>
-            Type: {threat[2]}<br>
-            Category: {threat[3]}<br>
-            Risk Score: {threat[4]}
-            """
-        else:
-            result = "No threat found."
-
-    return f"""
-    <h1>Threat Intelligence Aggregator</h1>
-
-    <form method="POST">
-        <input type="text" name="indicator" placeholder="Enter IP, Domain, or Hash">
-        <button type="submit">Search</button>
-    </form>
-
-    <br>
-
-    {result}
-    """
+    return render_template(
+        "index.html",
+        result=result,
+        total_threats=total_threats,
+        total_ips=total_ips,
+        total_domains=total_domains,
+        total_hashes=total_hashes
+    )
 
 if __name__ == "__main__":
     app.run(debug=True)
