@@ -28,11 +28,26 @@ def home():
     cursor.execute("SELECT * FROM threats ORDER BY id DESC")
     recent_threats = cursor.fetchall()
 
-    # Handle Forms
+        # Handle Forms
     if request.method == "POST":
 
+        # Delete Threat
+        if "delete_id" in request.form:
+
+            delete_id = request.form["delete_id"]
+
+            cursor.execute(
+                "DELETE FROM threats WHERE id=?",
+                (delete_id,)
+            )
+
+            conn.commit()
+
+            cursor.execute("SELECT * FROM threats ORDER BY id DESC")
+            recent_threats = cursor.fetchall()
+
         # Add New Threat Form
-        if "new_indicator" in request.form:
+        elif "new_indicator" in request.form:
 
             new_indicator = request.form["new_indicator"]
             new_type = request.form["new_type"]
@@ -50,7 +65,6 @@ def home():
 
             conn.commit()
 
-            # Refresh threat list after insert
             cursor.execute("SELECT * FROM threats ORDER BY id DESC")
             recent_threats = cursor.fetchall()
 

@@ -229,20 +229,21 @@
         <table class="table table-striped">
 
             <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Indicator</th>
-                    <th>Type</th>
-                    <th>Category</th>
-                    <th>Risk Score</th>
-                </tr>
-            </thead>
-
+    <tr>
+        <th>ID</th>
+        <th>Indicator</th>
+        <th>Type</th>
+        <th>Category</th>
+        <th>Risk Score</th>
+        <th>Action</th>
+    </tr>
+</thead>    
             <tbody>
 
                 {% for threat in recent_threats %}
 
 <tr>
+
     <td>{{ threat[0] }}</td>
     <td>{{ threat[1] }}</td>
     <td>{{ threat[2] }}</td>
@@ -269,7 +270,23 @@
 
     </td>
 
+    <td>
+        <form method="POST">
+            <input
+                type="hidden"
+                name="delete_id"
+                value="{{ threat[0] }}">
+
+            <button
+                type="submit"
+                class="btn btn-danger btn-sm">
+                Delete
+            </button>
+        </form>
+    </td>
+
 </tr>
+
 
 {% endfor %}
 
