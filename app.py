@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect
 import sqlite3
 
 app = Flask(__name__)
@@ -107,6 +107,51 @@ def home():
         total_hashes=total_hashes,
         recent_threats=recent_threats
     )
+@app.route("/edit/<int:threat_id>", methods=["GET", "POST"])
+def edit_threat(threat_id):
 
+    conn = sqlite3.connect("threats.db")
+    cursor = conn.cursor()
+
+    if request.method == "POST":
+
+        indicator = request.form["indicator"]
+        threat_type = request.form["type"]
+        category = request.form["category"]
+        risk_score = request.form["risk_score"]
+
+        cursor.execute(
+            """
+            UPDATE threats
+            SET indicator=?, type=?, category=?, risk_score=?
+            WHERE id=?
+            """,
+            (
+                indicator,
+                threat_type,
+                category,
+                risk_score,
+                threat_id
+            )
+        )
+
+        conn.commit()
+        conn.close()
+
+        return redirect("/")
+
+    cursor.execute(
+        "SELECT * FROM threats WHERE id=?",
+        (threat_id,)
+    )
+
+    threat = cursor.fetchone()
+
+    conn.close()
+
+    return render_template(
+        "edit.html",
+        threat=threat
+    )
 if __name__ == "__main__":
     app.run(debug=True)

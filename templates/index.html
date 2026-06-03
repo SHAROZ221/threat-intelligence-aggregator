@@ -271,20 +271,29 @@
     </td>
 
     <td>
-        <form method="POST">
-            <input
-                type="hidden"
-                name="delete_id"
-                value="{{ threat[0] }}">
 
-            <button
-                type="submit"
-                class="btn btn-danger btn-sm">
-                Delete
-            </button>
-        </form>
-    </td>
+    <form method="GET" action="/edit/{{ threat[0] }}" class="d-inline">
+        <button
+            type="submit"
+            class="btn btn-warning btn-sm">
+            Edit
+        </button>
+    </form>
 
+    <form method="POST" class="d-inline">
+        <input
+            type="hidden"
+            name="delete_id"    
+            value="{{ threat[0] }}">
+
+        <button
+            type="submit"
+            class="btn btn-danger btn-sm">
+            Delete
+        </button>
+    </form>
+
+</td>
 </tr>
 
 
