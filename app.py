@@ -10,6 +10,7 @@ load_dotenv()
 app = Flask(__name__)
 
 API_KEY = os.environ.get("ABUSEIPDB_API_KEY")
+VT_API_KEY = os.environ.get("VIRUSTOTAL_API_KEY")
 
 
 def check_ip_abuseipdb(ip):
@@ -46,6 +47,63 @@ def check_ip_abuseipdb(ip):
         return None
 
 
+def check_ip_virustotal(ip):
+    url = f"https://www.virustotal.com/api/v3/ip_addresses/{ip}"
+    headers = {"x-apikey": VT_API_KEY}
+    try:
+        response = requests.get(url, headers=headers, timeout=15)
+        if response.status_code == 200:
+            stats = response.json()["data"]["attributes"]["last_analysis_stats"]
+            return {
+                "malicious": stats.get("malicious", 0),
+                "suspicious": stats.get("suspicious", 0),
+                "harmless": stats.get("harmless", 0),
+                "total": sum(stats.values())
+            }
+        return None
+    except Exception as e:
+        print("VirusTotal IP Error:", e)
+        return None
+
+
+def check_domain_virustotal(domain):
+    url = f"https://www.virustotal.com/api/v3/domains/{domain}"
+    headers = {"x-apikey": VT_API_KEY}
+    try:
+        response = requests.get(url, headers=headers, timeout=15)
+        if response.status_code == 200:
+            stats = response.json()["data"]["attributes"]["last_analysis_stats"]
+            return {
+                "malicious": stats.get("malicious", 0),
+                "suspicious": stats.get("suspicious", 0),
+                "harmless": stats.get("harmless", 0),
+                "total": sum(stats.values())
+            }
+        return None
+    except Exception as e:
+        print("VirusTotal Domain Error:", e)
+        return None
+
+
+def check_hash_virustotal(file_hash):
+    url = f"https://www.virustotal.com/api/v3/files/{file_hash}"
+    headers = {"x-apikey": VT_API_KEY}
+    try:
+        response = requests.get(url, headers=headers, timeout=15)
+        if response.status_code == 200:
+            stats = response.json()["data"]["attributes"]["last_analysis_stats"]
+            return {
+                "malicious": stats.get("malicious", 0),
+                "suspicious": stats.get("suspicious", 0),
+                "harmless": stats.get("harmless", 0),
+                "total": sum(stats.values())
+            }
+        return None
+    except Exception as e:
+        print("VirusTotal Hash Error:", e)
+        return None
+
+
 @app.route("/", methods=["GET", "POST"])
 def home():
 
@@ -53,6 +111,7 @@ def home():
 
     result = None
     abuse_data = None
+    vt_data = None
 
     conn = sqlite3.connect("threats.db")
     cursor = conn.cursor()
@@ -148,12 +207,14 @@ def home():
 
             result = cursor.fetchone()
 
-            # AbuseIPDB Lookup
+            # AbuseIPDB + VirusTotal Lookup
             if filter_type in ("All", "IP"):
-
                 abuse_data = check_ip_abuseipdb(indicator)
-
-                print("ABUSE DATA =", abuse_data)
+                vt_data = check_ip_virustotal(indicator)
+            elif filter_type == "Domain":
+                vt_data = check_domain_virustotal(indicator)
+            elif filter_type == "Hash":
+                vt_data = check_hash_virustotal(indicator)
 
             if result is None:
                 result = "NOT_FOUND"
@@ -164,6 +225,7 @@ def home():
         "index.html",
         result=result,
         abuse_data=abuse_data,
+        vt_data=vt_data,
         total_threats=total_threats,
         total_ips=total_ips,
         total_domains=total_domains,
