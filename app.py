@@ -281,6 +281,31 @@ def edit_threat(threat_id):
         threat=threat
     )
 
+@app.route("/export")
+def export_csv():
+    import csv
+    import io
+    from datetime import date
+    from flask import Response
 
+    conn = sqlite3.connect("threats.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM threats ORDER BY id DESC")
+    threats = cursor.fetchall()
+    conn.close()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["id", "indicator", "type", "category", "risk_score"])
+    for threat in threats:
+        writer.writerow(threat)
+
+    filename = f"threatintel-iocs-{date.today()}.csv"
+
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
 if __name__ == "__main__":
     app.run(debug=False)
